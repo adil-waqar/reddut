@@ -103,11 +103,11 @@ class UserResolver {
       const userIdNum = parseInt(userId);
       const user = await User.findOne(userIdNum);
       if (!user) {
-        ctx.redis.del(FORGET_PASSWORD_PREFIX + token);
+        await ctx.redis.del(FORGET_PASSWORD_PREFIX + token);
         return { errors: [{ message: 'user does not exist anymore' }] };
       }
       user.password = password;
-      await User.update({ id: userIdNum }, { password: user.password });
+      await User.update(user.id, user);
       // clear out the token after a successful password change
       await ctx.redis.del(FORGET_PASSWORD_PREFIX + token);
       return {};

@@ -61,12 +61,12 @@ export class User extends BaseEntity {
   @BeforeUpdate()
   @BeforeInsert()
   async validate() {
+    console.log(this);
     const errors = await this._validate(this);
     if (errors.length > 0) throw new EntityValidationError(errors);
+    await this.hashPassword();
   }
 
-  @BeforeInsert()
-  @BeforeUpdate()
   async hashPassword() {
     this.password = await bcrypt.hash(this.password, 10);
   }
