@@ -1,4 +1,3 @@
-import { UniqueConstraintViolationException } from '@mikro-orm/core';
 import bcrypt from 'bcrypt';
 import { MyContext } from 'src/types';
 import {
@@ -11,6 +10,7 @@ import {
   Query,
   Resolver
 } from 'type-graphql';
+import { QueryFailedError } from 'typeorm';
 import { v4 } from 'uuid';
 import { COOKIE_NAME, FORGET_PASSWORD_PREFIX } from '../constants';
 import EntityValidationError from '../entities/errors/EntityValidationError';
@@ -63,7 +63,7 @@ class UserResolver {
   @Mutation(() => Boolean)
   async forgotPassword(@Arg('email') email: string, @Ctx() ctx: MyContext) {
     try {
-      const user = await ctx.em.findOne(User, { email });
+      const user = await User.findOne({ where: { email } });
       if (!user) return true;
       const token = v4();
       await sendEmail(
@@ -100,13 +100,14 @@ class UserResolver {
             }
           ]
         };
-      const user = await ctx.em.findOne(User, { id: Number(userId) });
+      const userIdNum = parseInt(userId);
+      const user = await User.findOne(userIdNum);
       if (!user) {
         ctx.redis.del(FORGET_PASSWORD_PREFIX + token);
         return { errors: [{ message: 'user does not exist anymore' }] };
       }
       user.password = password;
-      await ctx.em.persistAndFlush(user);
+      await User.update({ id: userIdNum }, { password: user.password });
       // clear out the token after a successful password change
       await ctx.redis.del(FORGET_PASSWORD_PREFIX + token);
       return {};
@@ -117,9 +118,9 @@ class UserResolver {
   }
 
   @Query(() => User, { nullable: true })
-  async me(@Ctx() ctx: MyContext): Promise<User | null> {
+  me(@Ctx() ctx: MyContext) {
     if (!ctx.req.session.userId) return null;
-    return await ctx.em.findOne(User, { id: ctx.req.session.userId });
+    return User.findOne(ctx.req.session.userId);
   }
 
   @Mutation(() => UserResponse)
@@ -128,12 +129,7 @@ class UserResolver {
     @Ctx() ctx: MyContext
   ): Promise<UserResponse> {
     try {
-      const user = ctx.em.create(User, {
-        username: options.username,
-        email: options.email,
-        password: options.password
-      });
-      await ctx.em.persistAndFlush(user);
+      const user = await User.create(options).save();
       ctx.req.session.userId = user.id;
       return { user };
     } catch (e) {
@@ -147,12 +143,11 @@ class UserResolver {
     @Arg('options') options: LoginInput,
     @Ctx() ctx: MyContext
   ): Promise<UserResponse> {
-    const user = await ctx.em.findOne(
-      User,
-      options.usernameOrEmail.includes('@')
+    const user = await User.findOne({
+      where: options.usernameOrEmail.includes('@')
         ? { email: options.usernameOrEmail }
         : { username: options.usernameOrEmail }
-    );
+    });
     if (!user) {
       return {
         errors: [
@@ -196,18 +191,32 @@ class UserResolver {
   }
 
   handleException(e: any): UserResponse {
-    if (e instanceof UniqueConstraintViolationException) {
-      const field = getFieldFromError(e);
-      return {
-        errors: [
-          {
-            field,
-            message: `${field} already exists`
-          }
-        ]
-      };
+    if (e instanceof QueryFailedError) {
+      const exception = e as any;
+      switch (exception.code) {
+        case '23505':
+          const field = getFieldFromError(e);
+          return {
+            errors: [
+              {
+                field,
+                message: `${field} already exists`
+              }
+            ]
+          };
+        default:
+          return {
+            errors: [
+              {
+                field: exception.code,
+                message: 'unhandled query error'
+              }
+            ]
+          };
+      }
     } else if (e instanceof EntityValidationError) {
-      return { errors: (e as EntityValidationError).getFieldErrors() };
+      const fieldException = e as EntityValidationError;
+      return { errors: fieldException.getFieldErrors() };
     } else {
       return {
         errors: [

@@ -1,42 +1,45 @@
-import {
-  BeforeCreate,
-  BeforeUpdate,
-  Entity,
-  PrimaryKey,
-  Property
-} from '@mikro-orm/core';
 import bcrypt from 'bcrypt';
 import { IsEmail, MinLength, validate } from 'class-validator';
 import { Error as FieldError } from 'src/resolvers/user';
 import { Field, ObjectType } from 'type-graphql';
+import {
+  BaseEntity,
+  BeforeInsert,
+  BeforeUpdate,
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
+} from 'typeorm';
 import EntityValidationError from './errors/EntityValidationError';
 
 @ObjectType()
 @Entity()
-export class User {
+export class User extends BaseEntity {
   @Field()
-  @PrimaryKey()
+  @PrimaryGeneratedColumn()
   id!: number;
 
   @Field(() => String)
-  @Property({ type: 'date' })
-  createdAt = new Date();
+  @CreateDateColumn()
+  createdAt: Date;
 
   @Field(() => String)
-  @Property({ type: 'date', onUpdate: () => new Date() })
-  updatedAt = new Date();
+  @UpdateDateColumn()
+  updatedAt: Date;
 
   @Field()
-  @Property({ type: 'text', unique: true })
+  @Column({ unique: true })
   @MinLength(3)
   username!: string;
 
   @Field()
-  @Property({ type: 'text', unique: true })
+  @Column({ unique: true })
   @IsEmail()
   email!: string;
 
-  @Property({ type: 'text' })
+  @Column()
   @MinLength(3)
   password!: string;
 
@@ -56,10 +59,15 @@ export class User {
   }
 
   @BeforeUpdate()
-  @BeforeCreate()
+  @BeforeInsert()
   async validate() {
     const errors = await this._validate(this);
     if (errors.length > 0) throw new EntityValidationError(errors);
+  }
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  async hashPassword() {
     this.password = await bcrypt.hash(this.password, 10);
   }
 }
