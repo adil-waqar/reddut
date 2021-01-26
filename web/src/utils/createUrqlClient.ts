@@ -30,6 +30,9 @@ export const createUrqlClient = (ssrExchange: any) => ({
   exchanges: [
     dedupExchange,
     cacheExchange({
+      keys: {
+        PaginatedPost: () => null
+      },
       updates: {
         Mutation: {
           login: (_result, _, cache, __) => {

@@ -8,7 +8,7 @@ import { createUrqlClient } from '../utils/createUrqlClient';
 const Index = () => {
   const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [posts, setPosts] = useState<PostFragment[]>([]);
-  const [{ data }] = useGetPostsQuery({
+  const [{ data, fetching }] = useGetPostsQuery({
     variables: {
       limit: 10,
       cursor: cursor ? cursor : null
@@ -16,8 +16,8 @@ const Index = () => {
   });
 
   useEffect(() => {
-    if (data) setPosts([...posts, ...data?.posts]);
-  }, [data?.posts]);
+    if (data) setPosts([...posts, ...data?.posts.posts]);
+  }, [data?.posts.posts]);
 
   return (
     <Layout>
@@ -37,15 +37,20 @@ const Index = () => {
             </Box>
           );
         })}
-        <Button
-          onClick={() => {
-            setCursor(data?.posts[data.posts.length - 1].createdAt);
-          }}
-          colorScheme="teal"
-          mb="25px"
-        >
-          Load More
-        </Button>
+        {data?.posts.hasMore ? (
+          <Button
+            isLoading={fetching}
+            onClick={() => {
+              setCursor(
+                data?.posts.posts[data.posts.posts.length - 1].createdAt
+              );
+            }}
+            colorScheme="teal"
+            mb="25px"
+          >
+            Load More
+          </Button>
+        ) : null}
       </Stack>
     </Layout>
   );

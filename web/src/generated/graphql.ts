@@ -17,7 +17,7 @@ export type Scalars = {
 export type Query = {
   __typename?: 'Query';
   hello: Scalars['String'];
-  posts: Array<Post>;
+  posts: PaginatedPost;
   post?: Maybe<Post>;
   me?: Maybe<User>;
 };
@@ -31,6 +31,12 @@ export type QueryPostsArgs = {
 
 export type QueryPostArgs = {
   id: Scalars['Float'];
+};
+
+export type PaginatedPost = {
+  __typename?: 'PaginatedPost';
+  posts: Array<Post>;
+  hasMore: Scalars['Boolean'];
 };
 
 export type Post = {
@@ -251,10 +257,14 @@ export type GetPostsQueryVariables = Exact<{
 
 export type GetPostsQuery = (
   { __typename?: 'Query' }
-  & { posts: Array<(
-    { __typename?: 'Post' }
-    & PostFragment
-  )> }
+  & { posts: (
+    { __typename?: 'PaginatedPost' }
+    & Pick<PaginatedPost, 'hasMore'>
+    & { posts: Array<(
+      { __typename?: 'Post' }
+      & PostFragment
+    )> }
+  ) }
 );
 
 export const _UserFragmentDoc = gql`
@@ -369,7 +379,10 @@ export function useMeQuery(options: Omit<Urql.UseQueryArgs<MeQueryVariables>, 'q
 export const GetPostsDocument = gql`
     query getPosts($limit: Int!, $cursor: String) {
   posts(limit: $limit, cursor: $cursor) {
-    ...post
+    posts {
+      ...post
+    }
+    hasMore
   }
 }
     ${PostFragmentDoc}`;
