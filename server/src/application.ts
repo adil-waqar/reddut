@@ -22,6 +22,17 @@ export default class Application {
   public server: Server;
   public redis: _Redis;
 
+  constructor() {
+    // Attaching a SIGINT listener on application instantiation
+    process.on('SIGINT', async () => {
+      console.log(`🙋‍♂️ Application is exiting, closing all foreign connections`);
+      await this.connection.close();
+      await this.shutdownSever();
+      this.redis.disconnect();
+      process.exit(0);
+    });
+  }
+
   public connectToDB = async (): Promise<void> => {
     try {
       this.connection = await createConnection({
@@ -29,7 +40,7 @@ export default class Application {
         database: 'lireddit2',
         username: 'postgres',
         password: 'postgres',
-        logging: true,
+        logging: !__prod__,
         synchronize: true,
         migrations: [path.join(__dirname, './migrations/*')],
         entities: [Post, User]
@@ -51,6 +62,15 @@ export default class Application {
       console.error('🔥 Could not connect to redis', e);
       throw new Error(e);
     }
+  };
+
+  private shutdownSever = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      this.server.close((err) => {
+        if (err) reject();
+        else resolve();
+      });
+    });
   };
 
   public init = async (): Promise<void> => {
