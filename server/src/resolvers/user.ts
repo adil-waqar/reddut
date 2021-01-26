@@ -106,7 +106,17 @@ class UserResolver {
         await ctx.redis.del(FORGET_PASSWORD_PREFIX + token);
         return { errors: [{ message: 'user does not exist anymore' }] };
       }
-      user.password = password;
+      //TODO: Need to find a better way to do below stupid thing
+      if (password.length < 3)
+        return {
+          errors: [
+            {
+              field: 'password',
+              message: ' password length should atleast be 3'
+            }
+          ]
+        };
+      user.password = await bcrypt.hash(password, 10);
       await User.update(user.id, user);
       // clear out the token after a successful password change
       await ctx.redis.del(FORGET_PASSWORD_PREFIX + token);
@@ -145,7 +155,7 @@ class UserResolver {
   ): Promise<UserResponse> {
     const user = await User.findOne({
       where: options.usernameOrEmail.includes('@')
-        ? { email: options.usernameOrEmail }
+        ? { email: options.usernameOrEmail, password: '' }
         : { username: options.usernameOrEmail }
     });
     if (!user) {

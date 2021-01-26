@@ -9,10 +9,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn
 } from 'typeorm';
 import EntityValidationError from './errors/EntityValidationError';
+import { Post } from './Post';
 
 @ObjectType()
 @Entity()
@@ -20,14 +22,6 @@ export class User extends BaseEntity {
   @Field()
   @PrimaryGeneratedColumn()
   id!: number;
-
-  @Field(() => String)
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Field(() => String)
-  @UpdateDateColumn()
-  updatedAt: Date;
 
   @Field()
   @Column({ unique: true })
@@ -43,6 +37,35 @@ export class User extends BaseEntity {
   @MinLength(3)
   password!: string;
 
+  @OneToMany(() => Post, (post) => post.creator)
+  posts: Post[];
+
+  @Field(() => String)
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @Field(() => String)
+  @UpdateDateColumn()
+  updatedAt: Date;
+
+  /**
+   * Hooks
+   */
+  @BeforeInsert()
+  @BeforeUpdate()
+  async validate() {
+    const errors = await this._validate(this);
+    if (errors.length > 0) throw new EntityValidationError(errors);
+  }
+
+  @BeforeInsert()
+  async hashPassword() {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+
+  /**
+   * Util methods
+   */
   async _validate(object: Object): Promise<FieldError[]> {
     const errors = await validate(object, {
       stopAtFirstError: true,
@@ -56,18 +79,5 @@ export class User extends BaseEntity {
         message: error.constraints![constraint]
       };
     });
-  }
-
-  @BeforeUpdate()
-  @BeforeInsert()
-  async validate() {
-    console.log(this);
-    const errors = await this._validate(this);
-    if (errors.length > 0) throw new EntityValidationError(errors);
-    await this.hashPassword();
-  }
-
-  async hashPassword() {
-    this.password = await bcrypt.hash(this.password, 10);
   }
 }
