@@ -1,28 +1,15 @@
 import bcrypt from 'bcrypt';
 import { IsEmail, MinLength, validate } from 'class-validator';
-import { Error as FieldError } from 'src/resolvers/user';
+import { Error as FieldError } from 'src/resolvers/user.resolver';
 import { Field, ObjectType } from 'type-graphql';
-import {
-  BaseEntity,
-  BeforeInsert,
-  BeforeUpdate,
-  Column,
-  CreateDateColumn,
-  Entity,
-  OneToMany,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn
-} from 'typeorm';
+import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany } from 'typeorm';
+import { Base } from './base.entity';
 import EntityValidationError from './errors/EntityValidationError';
-import { Post } from './Post';
+import { Post } from './post.entity';
 
 @ObjectType()
 @Entity()
-export class User extends BaseEntity {
-  @Field()
-  @PrimaryGeneratedColumn()
-  id!: number;
-
+export class User extends Base {
   @Field()
   @Column({ unique: true })
   @MinLength(3)
@@ -39,14 +26,6 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Post, (post) => post.creator)
   posts: Post[];
-
-  @Field(() => String)
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @Field(() => String)
-  @UpdateDateColumn()
-  updatedAt: Date;
 
   /**
    * Hooks

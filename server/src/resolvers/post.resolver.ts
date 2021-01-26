@@ -1,4 +1,4 @@
-import { MyContext } from 'src/types';
+import { MyContext } from 'src/interfaces/MyContext';
 import {
   Arg,
   Ctx,
@@ -14,8 +14,8 @@ import {
   UseMiddleware
 } from 'type-graphql';
 import { getConnection } from 'typeorm';
-import { Post } from '../entities/Post';
-import { User } from '../entities/User';
+import { Post } from '../entities/post.entity';
+import { User } from '../entities/user.entity';
 import { isAuth } from '../middleware/isAuth';
 
 @ObjectType()

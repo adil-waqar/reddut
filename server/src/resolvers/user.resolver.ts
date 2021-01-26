@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { MyContext } from 'src/types';
+import { MyContext } from 'src/interfaces/MyContext';
 import {
   Arg,
   Ctx,
@@ -14,7 +14,7 @@ import { QueryFailedError } from 'typeorm';
 import { v4 } from 'uuid';
 import { COOKIE_NAME, FORGET_PASSWORD_PREFIX } from '../constants';
 import EntityValidationError from '../entities/errors/EntityValidationError';
-import { User } from '../entities/User';
+import { User } from '../entities/user.entity';
 import getFieldFromError from '../utils/getFieldFromError';
 import { sendEmail } from '../utils/sendEmail';
 

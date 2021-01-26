@@ -1,4 +1,4 @@
-import { Error as FieldError } from '../../resolvers/user';
+import { Error as FieldError } from '../../resolvers/user.resolver';
 
 class EntityValidationError extends Error {
   private errors: FieldError[];
