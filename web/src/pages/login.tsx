@@ -32,7 +32,9 @@ const Login: React.FC<loginProps> = ({}) => {
               duration: 5000,
               isClosable: true
             });
-            router.push('/');
+            if (typeof router.query.next === 'string') {
+              router.push(router.query.next);
+            } else router.push('/');
           }
         }}
         initialValues={{ usernameOrEmail: '', password: '' }}

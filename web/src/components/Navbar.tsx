@@ -1,6 +1,5 @@
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import {
-  Box,
   Button,
   Flex,
   Heading,
@@ -67,7 +66,7 @@ export const Navbar: React.FC<NavbarProps> = ({}) => {
     );
   }
   return (
-    <Box p="10px" bg="teal.400">
+    <Flex position="sticky" top={0} p="10px" bg="teal.400">
       <Flex w="75%" mx="auto" align="center">
         <Heading color="black" size="lg">
           reddut
@@ -75,6 +74,6 @@ export const Navbar: React.FC<NavbarProps> = ({}) => {
         <Spacer />
         {jsx}
       </Flex>
-    </Box>
+    </Flex>
   );
 };
