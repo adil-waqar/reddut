@@ -4,6 +4,7 @@ import cors from 'cors';
 import express from 'express';
 import session from 'express-session';
 import Redis from 'ioredis';
+import path from 'path';
 import 'reflect-metadata';
 import { buildSchema } from 'type-graphql';
 import { createConnection } from 'typeorm';
@@ -15,6 +16,7 @@ import PostResolver from './resolvers/post';
 import UserResolver from './resolvers/user';
 import { MyContext } from './types';
 
+// run
 const main = async () => {
   const conn = await createConnection({
     type: 'postgres',
@@ -23,8 +25,12 @@ const main = async () => {
     password: 'postgres',
     logging: true,
     synchronize: true,
+    migrations: [path.join(__dirname, './migrations/*')],
     entities: [Post, User]
   });
+
+  // await Post.delete({});
+  // await conn.runMigrations();
 
   const app = express();
 

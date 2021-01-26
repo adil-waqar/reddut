@@ -155,7 +155,7 @@ class UserResolver {
   ): Promise<UserResponse> {
     const user = await User.findOne({
       where: options.usernameOrEmail.includes('@')
-        ? { email: options.usernameOrEmail, password: '' }
+        ? { email: options.usernameOrEmail }
         : { username: options.usernameOrEmail }
     });
     if (!user) {
