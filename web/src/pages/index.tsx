@@ -1,8 +1,9 @@
-import { Box, Button, Heading, Stack, Text } from '@chakra-ui/react';
+import { Box, Button, Flex, Heading, Stack, Text } from '@chakra-ui/react';
 import { withUrqlClient } from 'next-urql';
+import NextLink from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { Layout } from '../components/Layout';
-import { PostFragment, useGetPostsQuery } from '../generated/graphql';
+import { Post, PostFragment, useGetPostsQuery } from '../generated/graphql';
 import { createUrqlClient } from '../utils/createUrqlClient';
 
 const Index = () => {
@@ -16,13 +17,20 @@ const Index = () => {
   });
 
   useEffect(() => {
-    if (data) setPosts([...posts, ...data?.posts.posts]);
+    if (data) setPosts([...posts, ...(data.posts.posts as Post[])]);
   }, [data?.posts.posts]);
 
   return (
     <Layout>
-      <Heading>Posts</Heading>
-      <Stack spacing={6} mt="20px">
+      <Flex align="center">
+        <Heading>Posts</Heading>
+        <NextLink href="create-post">
+          <Button colorScheme="teal" ml="auto" size="sm">
+            Create Post
+          </Button>
+        </NextLink>
+      </Flex>
+      <Stack spacing={6} mt="15px">
         {posts.map((post) => {
           return (
             <Box
@@ -41,9 +49,11 @@ const Index = () => {
           <Button
             isLoading={fetching}
             onClick={() => {
-              setCursor(
-                data?.posts.posts[data.posts.posts.length - 1].createdAt
-              );
+              // Getting the "createAt" field of the last post below
+              const cursor = (data?.posts.posts as Post[])[
+                (data.posts.posts as Post[]).length - 1
+              ].createdAt;
+              setCursor(cursor);
             }}
             colorScheme="teal"
             mb="25px"

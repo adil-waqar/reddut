@@ -10,7 +10,9 @@ query getPosts($limit: Int!, $cursor: String) {
     posts {
       ...post
     }
-
     hasMore
+    errors {
+      ...error
+    }
   }
 }

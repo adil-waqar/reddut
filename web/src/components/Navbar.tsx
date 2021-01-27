@@ -68,9 +68,11 @@ export const Navbar: React.FC<NavbarProps> = ({}) => {
   return (
     <Flex position="sticky" top={0} p="10px" bg="teal.400">
       <Flex w="75%" mx="auto" align="center">
-        <Heading color="black" size="lg">
-          reddut
-        </Heading>
+        <NextLink href="/">
+          <Heading cursor="pointer" color="black" size="lg">
+            reddut
+          </Heading>
+        </NextLink>
         <Spacer />
         {jsx}
       </Flex>
