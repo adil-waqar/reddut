@@ -18,6 +18,9 @@ const errorExchange: Exchange = ({ forward }) => (ops$) => {
       if (error?.message.includes('not authenticated')) {
         Router.replace('/login');
       }
+      if (error?.message.includes('Failed to fetch')) {
+        Router.replace('/network-error');
+      }
     })
   );
 };

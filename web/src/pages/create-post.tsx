@@ -7,6 +7,8 @@ import InputField from '../components/InputField';
 import { Layout } from '../components/Layout';
 import { useCreatePostMutation } from '../generated/graphql';
 import { createUrqlClient } from '../utils/createUrqlClient';
+import handleUnhandledRejections from '../utils/handleUnhandledRejections';
+import { toErrorMap } from '../utils/toErrorMap';
 import useIsAuth from '../utils/useIsAuth';
 
 const CreatePost: React.FC = () => {
@@ -18,9 +20,13 @@ const CreatePost: React.FC = () => {
   return (
     <Layout variant="small">
       <Formik
-        onSubmit={async (values) => {
+        onSubmit={async (values, { setErrors }) => {
           const response = await createPost({ input: values });
-          if (!response.error) {
+          if (response.error) {
+            handleUnhandledRejections(response);
+            return;
+          }
+          if (!response.data?.createPost.errors) {
             toast({
               position: 'bottom',
               title: 'Success',
@@ -30,6 +36,8 @@ const CreatePost: React.FC = () => {
               isClosable: true
             });
             router.push('/');
+          } else {
+            setErrors(toErrorMap(response.data.createPost.errors));
           }
         }}
         initialValues={{ title: '', text: '' }}

@@ -35,38 +35,46 @@ export type QueryPostArgs = {
 
 export type PaginatedPost = {
   __typename?: 'PaginatedPost';
-  posts: Array<Post>;
+  posts?: Maybe<Array<Post>>;
+  errors?: Maybe<Array<Error>>;
   hasMore: Scalars['Boolean'];
 };
 
 export type Post = {
   __typename?: 'Post';
   id: Scalars['Float'];
+  createdAt: Scalars['String'];
+  updatedAt: Scalars['String'];
   title: Scalars['String'];
   text: Scalars['String'];
   points: Scalars['Float'];
   creatorId: Scalars['Float'];
-  createdAt: Scalars['String'];
-  updatedAt: Scalars['String'];
   textSnippet: Scalars['String'];
+  creator: User;
 };
 
 export type User = {
   __typename?: 'User';
   id: Scalars['Float'];
-  username: Scalars['String'];
-  email: Scalars['String'];
   createdAt: Scalars['String'];
   updatedAt: Scalars['String'];
+  username: Scalars['String'];
+  email: Scalars['String'];
+};
+
+export type Error = {
+  __typename?: 'Error';
+  field?: Maybe<Scalars['String']>;
+  message: Scalars['String'];
 };
 
 export type Mutation = {
   __typename?: 'Mutation';
-  createPost: Post;
-  updatePost?: Maybe<Post>;
+  createPost: PostResponse;
+  updatePost?: Maybe<PostResponse>;
   deletePost: Scalars['Boolean'];
   forgotPassword: Scalars['Boolean'];
-  changePassword: ChangePasswordResponse;
+  changePassword: UserResponse;
   register: UserResponse;
   login: UserResponse;
   logout: Scalars['Boolean'];
@@ -109,26 +117,21 @@ export type MutationLoginArgs = {
   options: LoginInput;
 };
 
+export type PostResponse = {
+  __typename?: 'PostResponse';
+  post?: Maybe<Post>;
+  errors?: Maybe<Array<Error>>;
+};
+
 export type PostInput = {
   title: Scalars['String'];
   text: Scalars['String'];
 };
 
-export type ChangePasswordResponse = {
-  __typename?: 'ChangePasswordResponse';
-  errors?: Maybe<Array<Error>>;
-};
-
-export type Error = {
-  __typename?: 'Error';
-  field?: Maybe<Scalars['String']>;
-  message: Scalars['String'];
-};
-
 export type UserResponse = {
   __typename?: 'UserResponse';
-  errors?: Maybe<Array<Error>>;
   user?: Maybe<User>;
+  errors?: Maybe<Array<Error>>;
 };
 
 export type RegisterInput = {
@@ -147,6 +150,11 @@ export type _UserFragment = (
   & Pick<User, 'id' | 'username' | 'email'>
 );
 
+export type ErrorFragment = (
+  { __typename?: 'Error' }
+  & Pick<Error, 'field' | 'message'>
+);
+
 export type ChangePasswordMutationVariables = Exact<{
   password: Scalars['String'];
   token: Scalars['String'];
@@ -156,7 +164,7 @@ export type ChangePasswordMutationVariables = Exact<{
 export type ChangePasswordMutation = (
   { __typename?: 'Mutation' }
   & { changePassword: (
-    { __typename?: 'ChangePasswordResponse' }
+    { __typename?: 'UserResponse' }
     & { errors?: Maybe<Array<(
       { __typename?: 'Error' }
       & Pick<Error, 'field' | 'message'>
@@ -172,8 +180,14 @@ export type CreatePostMutationVariables = Exact<{
 export type CreatePostMutation = (
   { __typename?: 'Mutation' }
   & { createPost: (
-    { __typename?: 'Post' }
-    & Pick<Post, 'id' | 'title' | 'text' | 'points' | 'creatorId' | 'createdAt' | 'updatedAt'>
+    { __typename?: 'PostResponse' }
+    & { post?: Maybe<(
+      { __typename?: 'Post' }
+      & Pick<Post, 'id' | 'title' | 'text'>
+    )>, errors?: Maybe<Array<(
+      { __typename?: 'Error' }
+      & ErrorFragment
+    )>> }
   ) }
 );
 
@@ -201,7 +215,7 @@ export type LoginMutation = (
       & _UserFragment
     )>, errors?: Maybe<Array<(
       { __typename?: 'Error' }
-      & Pick<Error, 'field' | 'message'>
+      & ErrorFragment
     )>> }
   ) }
 );
@@ -228,7 +242,7 @@ export type RegisterMutation = (
       & _UserFragment
     )>, errors?: Maybe<Array<(
       { __typename?: 'Error' }
-      & Pick<Error, 'field' | 'message'>
+      & ErrorFragment
     )>> }
   ) }
 );
@@ -260,10 +274,10 @@ export type GetPostsQuery = (
   & { posts: (
     { __typename?: 'PaginatedPost' }
     & Pick<PaginatedPost, 'hasMore'>
-    & { posts: Array<(
+    & { posts?: Maybe<Array<(
       { __typename?: 'Post' }
       & PostFragment
-    )> }
+    )>> }
   ) }
 );
 
@@ -272,6 +286,12 @@ export const _UserFragmentDoc = gql`
   id
   username
   email
+}
+    `;
+export const ErrorFragmentDoc = gql`
+    fragment error on Error {
+  field
+  message
 }
     `;
 export const PostFragmentDoc = gql`
@@ -299,16 +319,17 @@ export function useChangePasswordMutation() {
 export const CreatePostDocument = gql`
     mutation createPost($input: PostInput!) {
   createPost(input: $input) {
-    id
-    title
-    text
-    points
-    creatorId
-    createdAt
-    updatedAt
+    post {
+      id
+      title
+      text
+    }
+    errors {
+      ...error
+    }
   }
 }
-    `;
+    ${ErrorFragmentDoc}`;
 
 export function useCreatePostMutation() {
   return Urql.useMutation<CreatePostMutation, CreatePostMutationVariables>(CreatePostDocument);
@@ -329,12 +350,12 @@ export const LoginDocument = gql`
       ..._user
     }
     errors {
-      field
-      message
+      ...error
     }
   }
 }
-    ${_UserFragmentDoc}`;
+    ${_UserFragmentDoc}
+${ErrorFragmentDoc}`;
 
 export function useLoginMutation() {
   return Urql.useMutation<LoginMutation, LoginMutationVariables>(LoginDocument);
@@ -355,12 +376,12 @@ export const RegisterDocument = gql`
       ..._user
     }
     errors {
-      field
-      message
+      ...error
     }
   }
 }
-    ${_UserFragmentDoc}`;
+    ${_UserFragmentDoc}
+${ErrorFragmentDoc}`;
 
 export function useRegisterMutation() {
   return Urql.useMutation<RegisterMutation, RegisterMutationVariables>(RegisterDocument);

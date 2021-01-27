@@ -4,8 +4,7 @@ mutation login($options: LoginInput!) {
       ..._user
     }
     errors {
-      field
-      message
+      ...error
     }
   }
 }
