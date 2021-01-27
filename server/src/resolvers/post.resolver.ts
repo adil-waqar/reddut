@@ -17,14 +17,8 @@ import { getConnection } from 'typeorm';
 import { Post } from '../entities/post.entity';
 import { User } from '../entities/user.entity';
 import { isAuth } from '../middleware/isAuth';
-
-@ObjectType()
-class PaginatedPost {
-  @Field(() => [Post])
-  posts: Post[];
-  @Field()
-  hasMore: boolean;
-}
+import handleException from '../utils/handleException';
+import { EntityResponse } from './responses/generic.response';
 
 @InputType()
 class PostInput {
@@ -33,6 +27,16 @@ class PostInput {
   @Field()
   text!: string;
 }
+
+@ObjectType()
+class PostResponse extends EntityResponse(Post, 'post') {}
+
+@ObjectType()
+class PaginatedPost extends EntityResponse(Post, 'posts', true) {
+  @Field()
+  hasMore?: boolean;
+}
+
 @Resolver(Post)
 class PostResolver {
   @FieldResolver()
@@ -54,23 +58,30 @@ class PostResolver {
     @Arg('limit', () => Int) limit: number,
     @Arg('cursor', () => String, { nullable: true }) cursor: string
   ): Promise<PaginatedPost> {
-    const realLimit = Math.min(50, limit);
-    const realLimitPlusOne = realLimit + 1;
+    try {
+      const realLimit = Math.min(50, limit);
+      const realLimitPlusOne = realLimit + 1;
 
-    const qb = getConnection()
-      .createQueryBuilder()
-      .select('post')
-      .from(Post, 'post')
-      .orderBy('"createdAt"', 'DESC')
-      .take(realLimitPlusOne);
-    if (cursor)
-      qb.where('"createdAt" < :cursor', { cursor: new Date(parseInt(cursor)) });
+      const qb = getConnection()
+        .createQueryBuilder()
+        .select('post')
+        .from(Post, 'post')
+        .orderBy('"createdAt"', 'DESC')
+        .take(realLimitPlusOne);
+      if (cursor)
+        qb.where('"createdAt" < :cursor', {
+          cursor: new Date(parseInt(cursor))
+        });
 
-    const posts = await qb.getMany();
-    return {
-      posts: posts.slice(0, realLimit),
-      hasMore: posts.length === realLimitPlusOne
-    };
+      const posts = await qb.getMany();
+      return {
+        entity: posts.slice(0, realLimit),
+        hasMore: posts.length === realLimitPlusOne
+      };
+    } catch (e) {
+      console.error(`an error occured in the posts(...) resolver: ${e}`);
+      return { errors: handleException(e) };
+    }
   }
 
   @Query(() => Post, { nullable: true })
@@ -78,27 +89,39 @@ class PostResolver {
     return Post.findOne(id);
   }
 
-  @Mutation(() => Post)
+  @Mutation(() => PostResponse)
   @UseMiddleware(isAuth)
   async createPost(
     @Arg('input') input: PostInput,
     @Ctx() ctx: MyContext
-  ): Promise<Post> {
-    return Post.create({ ...input, creatorId: ctx.req.session.userId }).save();
+  ): Promise<PostResponse> {
+    try {
+      const post = await Post.create({
+        ...input,
+        creatorId: ctx.req.session.userId
+      }).save();
+      return { entity: post };
+    } catch (e) {
+      return { errors: handleException(e) };
+    }
   }
 
-  @Mutation(() => Post, { nullable: true })
+  @Mutation(() => PostResponse, { nullable: true })
   async updatePost(
     @Arg('id', () => Int) id: number,
     @Arg('title', { nullable: true }) title: string
-  ): Promise<Post | null> {
-    const post = await Post.findOne(id);
-    if (!post) return null;
-    if (title) {
-      post.title = title;
-      await Post.update({ id }, { title });
+  ): Promise<PostResponse> {
+    try {
+      const post = await Post.findOne(id);
+      if (!post) return { errors: [{ message: 'post does not exist' }] };
+      if (typeof title !== 'undefined') {
+        post.title = title;
+        await Post.update(post.id, post);
+      }
+      return { entity: post };
+    } catch (e) {
+      return { errors: handleException(e) };
     }
-    return post;
   }
 
   @Mutation(() => Boolean)

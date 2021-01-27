@@ -1,8 +1,6 @@
-import { Error as FieldError } from '../../resolvers/user.resolver';
-
+import FieldError from '../../resolvers/responses/error.response';
 class EntityValidationError extends Error {
   private errors: FieldError[];
-
   constructor(errors: FieldError[]) {
     super();
     this.errors = errors;

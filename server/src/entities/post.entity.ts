@@ -1,17 +1,20 @@
+import { MinLength } from 'class-validator';
 import { Field, ObjectType } from 'type-graphql';
 import { Column, Entity, ManyToOne } from 'typeorm';
-import { Base } from './base.entity';
+import BaseEntity from './base.entity';
 import { User } from './user.entity';
 
 @ObjectType()
 @Entity()
-export class Post extends Base {
+export class Post extends BaseEntity {
   @Field()
   @Column()
+  @MinLength(1)
   title!: string;
 
   @Field()
   @Column()
+  @MinLength(1)
   text!: string;
 
   @Field()

@@ -10,13 +10,12 @@ import {
   Query,
   Resolver
 } from 'type-graphql';
-import { QueryFailedError } from 'typeorm';
 import { v4 } from 'uuid';
 import { COOKIE_NAME, FORGET_PASSWORD_PREFIX } from '../constants';
-import EntityValidationError from '../entities/errors/EntityValidationError';
 import { User } from '../entities/user.entity';
-import getFieldFromError from '../utils/getFieldFromError';
+import handleException from '../utils/handleException';
 import { sendEmail } from '../utils/sendEmail';
+import { EntityResponse } from './responses/generic.response';
 
 @InputType()
 class LoginInput {
@@ -37,27 +36,7 @@ class RegisterInput {
 }
 
 @ObjectType()
-export class Error {
-  @Field({ nullable: true })
-  field?: string;
-  @Field()
-  message!: string;
-}
-
-@ObjectType()
-class UserResponse {
-  @Field(() => [Error], { nullable: true })
-  errors?: Error[];
-  @Field({ nullable: true })
-  user?: User;
-}
-
-@ObjectType()
-class ChangePasswordResponse {
-  @Field(() => [Error], { nullable: true })
-  errors?: Error[];
-}
-
+class UserResponse extends EntityResponse(User, 'user') {}
 @Resolver()
 class UserResolver {
   @Mutation(() => Boolean)
@@ -83,12 +62,12 @@ class UserResolver {
     }
   }
 
-  @Mutation(() => ChangePasswordResponse)
+  @Mutation(() => UserResponse)
   async changePassword(
     @Arg('token') token: string,
     @Arg('password') password: string,
     @Ctx() ctx: MyContext
-  ): Promise<ChangePasswordResponse> {
+  ): Promise<UserResponse> {
     try {
       const userId = await ctx.redis.get(FORGET_PASSWORD_PREFIX + token);
       if (!userId)
@@ -123,7 +102,7 @@ class UserResolver {
       return {};
     } catch (e) {
       console.error(`an error occured in changePassword(...) resolver: ${e}`);
-      return this.handleException(e);
+      return { errors: handleException(e) };
     }
   }
 
@@ -141,10 +120,10 @@ class UserResolver {
     try {
       const user = await User.create(options).save();
       ctx.req.session.userId = user.id;
-      return { user };
+      return { entity: user };
     } catch (e) {
       console.error(`an error occured in the regiser(...) resolver: ${e}`);
-      return this.handleException(e);
+      return { errors: handleException(e) };
     }
   }
 
@@ -181,7 +160,7 @@ class UserResolver {
 
     ctx.req.session.userId = user.id;
     return {
-      user
+      entity: user
     };
   }
 
@@ -198,44 +177,6 @@ class UserResolver {
         } else resolve(true);
       });
     });
-  }
-
-  handleException(e: any): UserResponse {
-    if (e instanceof QueryFailedError) {
-      const exception = e as any;
-      switch (exception.code) {
-        case '23505':
-          const field = getFieldFromError(e);
-          return {
-            errors: [
-              {
-                field,
-                message: `${field} already exists`
-              }
-            ]
-          };
-        default:
-          return {
-            errors: [
-              {
-                field: exception.code,
-                message: 'unhandled query error'
-              }
-            ]
-          };
-      }
-    } else if (e instanceof EntityValidationError) {
-      const fieldException = e as EntityValidationError;
-      return { errors: fieldException.getFieldErrors() };
-    } else {
-      return {
-        errors: [
-          {
-            message: 'Internal server error'
-          }
-        ]
-      };
-    }
   }
 }
 
