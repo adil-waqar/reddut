@@ -7,7 +7,7 @@ type PageVariables = {
   cursor: string | null;
 }[];
 
-const PAGINATION_LIMIT = 33;
+const PAGINATION_LIMIT = 10;
 
 const PaginatedPosts: React.FC = () => {
   const [pageVariables, setPageVariables] = useState<PageVariables>([
