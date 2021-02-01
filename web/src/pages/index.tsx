@@ -1,8 +1,9 @@
-import { Box, Button, Flex, Heading, Stack, Text } from '@chakra-ui/react';
+import { Button, Flex, Heading } from '@chakra-ui/react';
 import { withUrqlClient } from 'next-urql';
 import NextLink from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { Layout } from '../components/Layout';
+import PaginatedPosts from '../components/PaginatedPosts';
 import { Post, PostFragment, useGetPostsQuery } from '../generated/graphql';
 import { createUrqlClient } from '../utils/createUrqlClient';
 
@@ -17,7 +18,9 @@ const Index = () => {
   });
 
   useEffect(() => {
-    if (data) setPosts([...posts, ...(data.posts.posts as Post[])]);
+    if (data) {
+      setPosts([...(data.posts.posts as Post[])]);
+    }
   }, [data?.posts.posts]);
 
   return (
@@ -30,38 +33,7 @@ const Index = () => {
           </Button>
         </NextLink>
       </Flex>
-      <Stack spacing={6} mt="15px">
-        {posts.map((post) => {
-          return (
-            <Box
-              key={post.id}
-              p={5}
-              shadow="md"
-              borderWidth="1px"
-              borderRadius="8px"
-            >
-              <Heading fontSize="xl">{post.title}</Heading>
-              <Text mt={4}>{post.textSnippet}</Text>
-            </Box>
-          );
-        })}
-        {data?.posts.hasMore ? (
-          <Button
-            isLoading={fetching}
-            onClick={() => {
-              // Getting the "createAt" field of the last post below
-              const cursor = (data?.posts.posts as Post[])[
-                (data.posts.posts as Post[]).length - 1
-              ].createdAt;
-              setCursor(cursor);
-            }}
-            colorScheme="teal"
-            mb="25px"
-          >
-            Load More
-          </Button>
-        ) : null}
-      </Stack>
+      <PaginatedPosts />
     </Layout>
   );
 };

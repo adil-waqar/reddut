@@ -3,6 +3,11 @@ fragment post on Post {
   title
   textSnippet
   createdAt
+  points
+  creator {
+    id
+    username
+  }
 }
 
 query getPosts($limit: Int!, $cursor: String) {

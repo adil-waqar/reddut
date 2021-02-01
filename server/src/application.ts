@@ -10,6 +10,7 @@ import { buildSchema } from 'type-graphql';
 import { Connection, createConnection } from 'typeorm';
 import { COOKIE_NAME, PORT, __prod__ } from './constants';
 import { Post } from './entities/post.entity';
+import { Updoot } from './entities/updoot.entity';
 import { User } from './entities/user.entity';
 import { MyContext } from './interfaces/MyContext';
 import HelloResolver from './resolvers/hello.resolver';
@@ -43,7 +44,7 @@ export default class Application {
         logging: !__prod__,
         synchronize: true,
         migrations: [path.join(__dirname, './migrations/*')],
-        entities: [Post, User]
+        entities: [Post, User, Updoot]
       });
       console.log(`🤞 Database connected successfully`);
       // await this.connection.runMigrations();

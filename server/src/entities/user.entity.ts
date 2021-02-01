@@ -4,6 +4,7 @@ import { Field, ObjectType } from 'type-graphql';
 import { BeforeInsert, Column, Entity, OneToMany } from 'typeorm';
 import BaseEntity from './base.entity';
 import { Post } from './post.entity';
+import { Updoot } from './updoot.entity';
 
 @ObjectType()
 @Entity()
@@ -24,6 +25,9 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Post, (post) => post.creator)
   posts: Post[];
+
+  @OneToMany(() => Updoot, (updoot) => updoot.user)
+  updoots: Updoot[];
 
   @BeforeInsert()
   async hashPassword() {

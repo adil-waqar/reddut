@@ -1,7 +1,8 @@
 import { MinLength } from 'class-validator';
 import { Field, ObjectType } from 'type-graphql';
-import { Column, Entity, ManyToOne } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import BaseEntity from './base.entity';
+import { Updoot } from './updoot.entity';
 import { User } from './user.entity';
 
 @ObjectType()
@@ -27,4 +28,7 @@ export class Post extends BaseEntity {
 
   @ManyToOne(() => User, (user) => user.posts)
   creator!: User;
+
+  @OneToMany(() => Updoot, (updoot) => updoot.post)
+  updoots: Updoot[];
 }

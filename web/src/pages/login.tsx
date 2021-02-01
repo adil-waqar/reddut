@@ -59,7 +59,7 @@ const Login: React.FC<loginProps> = ({}) => {
               <Text mt="5px">
                 Forgot password? Click{' '}
                 {
-                  <NextLink href="/forgotPassword">
+                  <NextLink href="/forgot-password">
                     <Link fontWeight="500" href="#">
                       here
                     </Link>

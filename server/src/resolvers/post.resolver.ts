@@ -13,8 +13,9 @@ import {
   Root,
   UseMiddleware
 } from 'type-graphql';
-import { getConnection } from 'typeorm';
+import { getConnection, getManager } from 'typeorm';
 import { Post } from '../entities/post.entity';
+import { Updoot } from '../entities/updoot.entity';
 import { User } from '../entities/user.entity';
 import { isAuth } from '../middleware/isAuth';
 import handleException from '../utils/handleException';
@@ -26,6 +27,14 @@ class PostInput {
   title!: string;
   @Field()
   text!: string;
+}
+
+@InputType()
+class VoteInput {
+  @Field()
+  postId: number;
+  @Field()
+  value: number;
 }
 
 @ObjectType()
@@ -42,6 +51,56 @@ class PostResolver {
   @FieldResolver()
   textSnippet(@Root() post: Post): string {
     return post.text.slice(0, 200);
+  }
+
+  @Mutation(() => PostResponse)
+  @UseMiddleware(isAuth)
+  async vote(
+    @Arg('input') input: VoteInput,
+    @Ctx() ctx: MyContext
+  ): Promise<PostResponse> {
+    try {
+      const { userId } = ctx.req.session;
+      const { postId, value } = input;
+      const realValue = value > 0 ? 1 : -1;
+      return await getManager().transaction<PostResponse>(
+        async (transactionalEntityManager) => {
+          const doot = await transactionalEntityManager.findOne(Updoot, {
+            where: { postId, userId }
+          });
+
+          if (doot && doot.value === realValue) {
+            console.log(doot.value, realValue);
+            return {};
+          } else if (doot && doot.value !== realValue) {
+            doot.value = realValue;
+            await transactionalEntityManager.save(doot);
+          } else {
+            await transactionalEntityManager.insert(Updoot, {
+              userId,
+              postId,
+              value: realValue
+            });
+          }
+
+          const post = await transactionalEntityManager.findOne(Post, {
+            where: { id: postId }
+          });
+          if (!post)
+            return {
+              errors: [
+                { message: 'the post you are trying to upvote is deleted :(' }
+              ]
+            };
+          post.points = post.points + realValue;
+          const nPost = await transactionalEntityManager.save(post);
+          return { entity: nPost };
+        }
+      );
+    } catch (e) {
+      console.error(`an error occured in vote(...) resolver: ${e}`);
+      return {};
+    }
   }
 
   @FieldResolver(() => User)

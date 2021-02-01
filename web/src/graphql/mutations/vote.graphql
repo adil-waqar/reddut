@@ -1,0 +1,10 @@
+mutation votePost($input: VoteInput!) {
+  vote(input: $input) {
+    post {
+      id
+      title
+      text
+      points
+    }
+  }
+}
