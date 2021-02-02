@@ -49,12 +49,12 @@ export default class Application {
         type: 'postgres',
         url: DATABASE_URL,
         logging: !__prod__,
-        synchronize: true,
+        synchronize: !__prod__,
         migrations: [path.join(__dirname, './migrations/*')],
         entities: [Post, User, Updoot]
       });
+      if (__prod__) await this.connection.runMigrations();
       console.log(`🤞 Database connected successfully`);
-      // await this.connection.runMigrations();
     } catch (e) {
       console.error('🔥 Could not connect to the database', e);
       throw new Error(e);
@@ -85,7 +85,12 @@ export default class Application {
     const RedisStore = connectRedis(session);
 
     this.host = express();
-    this.host.use(cors({ credentials: true, origin: CORE_ORIGIN }));
+    this.host.use(
+      cors({
+        credentials: true,
+        origin: [CORE_ORIGIN, 'http://localhost:3000', 'http://web:3000']
+      })
+    );
     this.host.use(
       session({
         name: COOKIE_NAME,
@@ -97,7 +102,7 @@ export default class Application {
           maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
           httpOnly: true, // cant access cookie in js
           sameSite: 'lax', //csrf
-          secure: __prod__ // cookie only works in https
+          secure: false // cookie only works in https
         },
         secret: SESSION_SECRET,
         resave: false,
