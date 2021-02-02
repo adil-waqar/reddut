@@ -1,3 +1,4 @@
+import 'dotenv-safe/config';
 import 'reflect-metadata';
 import Application from './application';
 

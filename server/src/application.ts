@@ -8,7 +8,15 @@ import Redis, { Redis as _Redis } from 'ioredis';
 import path from 'path';
 import { buildSchema } from 'type-graphql';
 import { Connection, createConnection } from 'typeorm';
-import { COOKIE_NAME, PORT, __prod__ } from './constants';
+import {
+  COOKIE_NAME,
+  CORE_ORIGIN,
+  DATABASE_URL,
+  PORT,
+  REDIS_URL,
+  SESSION_SECRET,
+  __prod__
+} from './constants';
 import { Post } from './entities/post.entity';
 import { Updoot } from './entities/updoot.entity';
 import { User } from './entities/user.entity';
@@ -39,9 +47,7 @@ export default class Application {
     try {
       this.connection = await createConnection({
         type: 'postgres',
-        database: 'lireddit2',
-        username: 'postgres',
-        password: 'postgres',
+        url: DATABASE_URL,
         logging: !__prod__,
         synchronize: true,
         migrations: [path.join(__dirname, './migrations/*')],
@@ -57,7 +63,7 @@ export default class Application {
 
   public connectToRedis = async (): Promise<void> => {
     try {
-      this.redis = new Redis({ lazyConnect: true });
+      this.redis = new Redis(REDIS_URL, { lazyConnect: true });
       await this.redis.connect();
       console.log(`🤞 Redis connected successfully`);
     } catch (e) {
@@ -79,7 +85,7 @@ export default class Application {
     const RedisStore = connectRedis(session);
 
     this.host = express();
-    this.host.use(cors({ credentials: true, origin: 'http://localhost:3000' }));
+    this.host.use(cors({ credentials: true, origin: CORE_ORIGIN }));
     this.host.use(
       session({
         name: COOKIE_NAME,
@@ -93,7 +99,7 @@ export default class Application {
           sameSite: 'lax', //csrf
           secure: __prod__ // cookie only works in https
         },
-        secret: 'ahdajhdjkahs',
+        secret: SESSION_SECRET,
         resave: false,
         saveUninitialized: false
       })
