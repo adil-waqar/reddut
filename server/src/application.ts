@@ -85,6 +85,7 @@ export default class Application {
     const RedisStore = connectRedis(session);
 
     this.host = express();
+    this.host.set('trust proxy', 1);
     this.host.use(
       cors({
         credentials: true,
