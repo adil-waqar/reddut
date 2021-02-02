@@ -30,6 +30,8 @@ services:
       context: ./web
     ports:
       - 3000:3000
+    args:
+      NEXT_PUBLIC_GRAPHQL_SERVER_URL: http://206.189.229.146:4000/graphql
     environment:
       - NEXT_PUBLIC_GRAPHQL_SERVER_URL=http://server:4000/graphql
     depends_on:

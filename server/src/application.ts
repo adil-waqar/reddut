@@ -129,9 +129,15 @@ export default class Application {
         cors: false
       });
 
-      this.server = this.host.listen(PORT, () => {
-        console.log(`🚀 Server is running at http://localhost:${PORT}/graphql`);
-      });
+      this.server = this.host.listen(
+        PORT,
+        __prod__ ? '0.0.0.0' : '127.0.0.1',
+        () => {
+          console.log(
+            `🚀 Server is running at http://localhost:${PORT}/graphql`
+          );
+        }
+      );
     } catch (e) {
       console.error('📌 Could not start server', e);
       throw new Error(e);
