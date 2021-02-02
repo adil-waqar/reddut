@@ -20,7 +20,7 @@ services:
       - REDIS_URL=redis:6379
       - PORT=4000
       - SESSION_SECRET=qowiueojwojfalksdjoqiwueo
-      - CORS_ORIGIN=http://web:3000
+      - CORS_ORIGIN=http://${HOST_SERVER_IP}:3000
     depends_on:
       - db
       - redis
@@ -29,7 +29,7 @@ services:
     build:
       context: ./web
       args:
-        - NEXT_PUBLIC_GRAPHQL_SERVER_URL=http://206.189.229.146:4000/graphql
+        - NEXT_PUBLIC_GRAPHQL_SERVER_URL=http://${HOST_SERVER_IP}:4000/graphql
     ports:
       - 3000:3000
     environment:
