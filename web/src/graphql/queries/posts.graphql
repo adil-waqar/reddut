@@ -1,15 +1,3 @@
-fragment post on Post {
-  id
-  title
-  textSnippet
-  createdAt
-  points
-  creator {
-    id
-    username
-  }
-}
-
 query getPosts($limit: Int!, $cursor: String) {
   posts(limit: $limit, cursor: $cursor) {
     posts {

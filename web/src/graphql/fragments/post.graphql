@@ -1,0 +1,11 @@
+fragment post on Post {
+  id
+  title
+  textSnippet
+  createdAt
+  points
+  creator {
+    id
+    username
+  }
+}

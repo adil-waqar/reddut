@@ -30,6 +30,16 @@ class PostInput {
 }
 
 @InputType()
+class EditPostInput {
+  @Field()
+  id!: number;
+  @Field({ nullable: true })
+  title?: string;
+  @Field({ nullable: true })
+  text?: string;
+}
+
+@InputType()
 class VoteInput {
   @Field()
   postId: number;
@@ -92,7 +102,7 @@ class PostResolver {
                 { message: 'the post you are trying to upvote is deleted :(' }
               ]
             };
-          post.points = post.points + realValue;
+          post.points = post.points + realValue * (doot ? 2 : 1);
           const nPost = await transactionalEntityManager.save(post);
           return { entity: nPost };
         }
@@ -104,12 +114,8 @@ class PostResolver {
   }
 
   @FieldResolver(() => User)
-  async creator(@Root() post: Post): Promise<User> {
-    const _post = await Post.findOne({
-      where: { id: post.id },
-      relations: ['creator']
-    });
-    return _post!.creator;
+  async creator(@Root() post: Post, @Ctx() ctx: MyContext): Promise<User> {
+    return ctx.userLoader.load(post.creatorId);
   }
 
   @Query(() => PaginatedPost)
@@ -144,7 +150,7 @@ class PostResolver {
   }
 
   @Query(() => Post, { nullable: true })
-  post(@Arg('id') id: number): Promise<Post | undefined> {
+  post(@Arg('id', () => Int) id: number): Promise<Post | undefined> {
     return Post.findOne(id);
   }
 
@@ -167,16 +173,13 @@ class PostResolver {
 
   @Mutation(() => PostResponse, { nullable: true })
   async updatePost(
-    @Arg('id', () => Int) id: number,
-    @Arg('title', { nullable: true }) title: string
+    @Arg('input', () => EditPostInput, { nullable: true }) input: EditPostInput
   ): Promise<PostResponse> {
     try {
-      const post = await Post.findOne(id);
+      const post = await Post.findOne(input.id);
       if (!post) return { errors: [{ message: 'post does not exist' }] };
-      if (typeof title !== 'undefined') {
-        post.title = title;
-        await Post.update(post.id, post);
-      }
+      Object.assign(post, input);
+      await Post.update(post.id, post);
       return { entity: post };
     } catch (e) {
       return { errors: handleException(e) };
@@ -184,8 +187,12 @@ class PostResolver {
   }
 
   @Mutation(() => Boolean)
-  async deletePost(@Arg('id', () => Int) id: number): Promise<boolean> {
-    await Post.delete(id);
+  @UseMiddleware(isAuth)
+  async deletePost(
+    @Arg('id', () => Int) id: number,
+    @Ctx() ctx: MyContext
+  ): Promise<boolean> {
+    await Post.delete({ id, creatorId: ctx.req.session.userId });
     return true;
   }
 }

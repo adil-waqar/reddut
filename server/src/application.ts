@@ -16,6 +16,7 @@ import { MyContext } from './interfaces/MyContext';
 import HelloResolver from './resolvers/hello.resolver';
 import PostResolver from './resolvers/post.resolver';
 import UserResolver from './resolvers/user.resolver';
+import createUserLoader from './utils/createUserLoader';
 
 export default class Application {
   public connection: Connection;
@@ -104,7 +105,12 @@ export default class Application {
           resolvers: [HelloResolver, PostResolver, UserResolver],
           validate: false
         }),
-        context: ({ req, res }): MyContext => ({ req, res, redis: this.redis })
+        context: ({ req, res }): MyContext => ({
+          req,
+          res,
+          redis: this.redis,
+          userLoader: createUserLoader()
+        })
       });
 
       apolloServer.applyMiddleware({
