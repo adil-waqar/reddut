@@ -11,6 +11,7 @@ import {
   RegisterMutation
 } from '../generated/graphql';
 import { betterUpdateQuery } from './betterUpdateQuery';
+import getServerUrl from './getServerUrl';
 import { isServerSideRendered } from './isServerSideRendered';
 
 const errorExchange: Exchange = ({ forward }) => (ops$) => {
@@ -34,7 +35,7 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
   }
 
   return {
-    url: 'http://localhost:4000/graphql',
+    url: getServerUrl() || 'http://localhost:4000/graphql',
     fetchOptions: {
       credentials: 'include',
       headers: cookie
