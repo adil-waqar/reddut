@@ -89,7 +89,7 @@ export default class Application {
     this.host.use(
       cors({
         credentials: true,
-        origin: [CORE_ORIGIN, 'http://localhost:3000', 'http://web:3000']
+        origin: [CORE_ORIGIN]
       })
     );
     this.host.use(
