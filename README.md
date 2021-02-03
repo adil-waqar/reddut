@@ -1,9 +1,5 @@
-<!-- PROJECT LOGO -->
-<br />
 <p align="center">
-
   <h3 align="center">Reddut</h3>
-
   <p align="center">
     This is a totally original idea of the next generation of social media. Please don't confuse it with the other crappy reddit.
     <br />
